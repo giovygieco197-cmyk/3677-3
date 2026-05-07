@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>纸牌积分器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        /* 整体背景改为浅绿色 */
+        body {
+            background: #e6f7e6;
+            padding: 15px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            margin: 10px 0 25px;
+            font-size: 26px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        /* 总分卡片 */
+        .total-box {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .player-total {
+            background: #ffffff;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+        .player-total h3 {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 6px;
+        }
+        .player-total .score {
+            font-size: 26px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            background: #ffffff;
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+            margin-bottom: 25px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .input-row label {
+            width: 40px;
+            font-size: 18px;
+            font-weight: 500;
+            color: #34495e;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 13px 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 12px;
+            font-size: 18px;
+            outline: none;
+            text-align: right;
+            transition: 0.2s;
+        }
+        .input-row input:focus {
+            border-color: #27ae60;
+        }
+
+        /* 按钮 */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            font-size: 17px;
+            font-weight: bold;
+            margin: 6px 0;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #fff;
+        }
+        .btn-green {
+            background: #27ae60;
+        }
+        .btn-orange {
+            background: #f39c12;
+        }
+        .btn-red {
+            background: #e74c3c;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .tip {
+            text-align: center;
+            margin: 10px 0;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+
+        /* 记录列表 */
+        .record-list {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+        }
+        .record-item {
+            padding: 14px 0;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #2c3e50;
+        }
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        .round {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .edit-btn {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="title">纸牌积分器</h1>
+
+    <!-- 总分展示 -->
+    <div class="total-box">
+        <div class="player-total">
+            <h3>东</h3>
+            <div id="eastTotal">0</div>
+        </div>
+        <div class="player-total">
+            <h3>南</h3>
+            <div id="southTotal">0</div>
+        </div>
+        <div class="player-total">
+            <h3>西</h3>
+            <div id="westTotal">0</div>
+        </div>
+        <div class="player-total">
+            <h3>北</h3>
+            <div id="northTotal">0</div>
+        </div>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="input-area">
+        <div class="input-row">
+            <label>东</label>
+            <input type="number" id="east" placeholder="可输负数">
+        </div>
+        <div class="input-row">
+            <label>南</label>
+            <input type="number" id="south" placeholder="可输负数">
+        </div>
+        <div class="input-row">
+            <label>西</label>
+            <input type="number" id="west" placeholder="可输负数">
+        </div>
+        <div class="input-row">
+            <label>北</label>
+            <input type="number" id="north" placeholder="可输负数">
+        </div>
+
+        <p class="tip" id="tip">⚠️ 4人分数相加必须等于0</p>
+
+        <button class="btn btn-green" onclick="addRound()" id="submitBtn">✅ 提交本轮分数</button>
+        <button class="btn btn-orange" onclick="undoLast()" style="display:none;" id="undoBtn">↶ 撤销上一轮</button>
+        <button class="btn btn-red" onclick="resetAll()">🗑️ 清空所有记录</button>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="record-list">
+        <div id="recordList">暂无记录</div>
+    </div>
+
+<script>
+    let scores = { east: 0, south: 0, west: 0, north: 0 };
+    let round = 1;
+    let history = [];
+    let editingIndex = -1;
+
+    // 提交分数
+    function addRound() {
+        let e = Number(document.getElementById('east').value) || 0;
+        let s = Number(document.getElementById('south').value) || 0;
+        let w = Number(document.getElementById('west').value) || 0;
+        let n = Number(document.getElementById('north').value) || 0;
+        let sum = e + s + w + n;
+
+        if (sum.toFixed(2) != 0) {
+            document.getElementById('tip').innerText = `❌ 总和为 ${sum}，必须等于0！`;
+            return;
+        }
+
+        if (editingIndex >= 0) {
+            updateEditRound(e, s, w, n);
+            return;
+        }
+
+        scores.east += e;
+        scores.south += s;
+        scores.west += w;
+        scores.north += n;
+
+        history.push({ e, s, w, n, round });
+        updateTotal();
+        addRecordToUI(e, s, w, n, round);
+        clearInputs();
+        round++;
+        document.getElementById('tip').innerText = "✅ 提交成功";
+        document.getElementById('undoBtn').style.display = 'block';
+    }
+
+    // 更新总分
+    function updateTotal() {
+        document.getElementById('eastTotal').innerText = scores.east;
+        document.getElementById('southTotal').innerText = scores.south;
+        document.getElementById('westTotal').innerText = scores.west;
+        document.getElementById('northTotal').innerText = scores.north;
+    }
+
+    // 清空输入
+    function clearInputs() {
+        document.getElementById('east').value = '';
+        document.getElementById('south').value = '';
+        document.getElementById('west').value = '';
+        document.getElementById('north').value = '';
+        document.getElementById('tip').innerText = '⚠️ 4人分数相加必须等于0';
+        editingIndex = -1;
+        document.getElementById('submitBtn').innerText = '✅ 提交本轮分数';
+    }
+
+    // 添加记录UI
+    function addRecordToUI(e, s, w, n, r) {
+        let list = document.getElementById('recordList');
+        if (list.innerText === '暂无记录') list.innerHTML = '';
+
+        let item = document.createElement('div');
+        item.className = 'record-item';
+        item.innerHTML = `
+            <div><span class="round">第${r}轮</span> 东:${e} 南:${s} 西:${w} 北:${n}</div>
+            <button class="edit-btn" onclick="editRound(${history.length-1})">修改</button>
+        `;
+        list.prepend(item);
+    }
+
+    // 修改某轮
+    function editRound(index) {
+        let data = history[index];
+        editingIndex = index;
+        document.getElementById('east').value = data.e;
+        document.getElementById('south').value = data.s;
+        document.getElementById('west').value = data.w;
+        document.getElementById('north').value = data.n;
+        document.getElementById('submitBtn').innerText = '💾 保存修改';
+        document.getElementById('tip').innerText = '📝 正在修改第' + data.round + '轮';
+    }
+
+    // 执行修改
+    function updateEditRound(newE, newS, newW, newN) {
+        let old = history[editingIndex];
+        
+        scores.east -= old.e;
+        scores.south -= old.s;
+        scores.west -= old.w;
+        scores.north -= old.n;
+
+        scores.east += newE;
+        scores.south += newS;
+        scores.west += newW;
+        scores.north += newN;
+
+        history[editingIndex] = { ...old, e: newE, s: newS, w: newW, n: newN };
+        updateTotal();
+        refreshRecordUI();
+        clearInputs();
+        document.getElementById('tip').innerText = "✅ 修改成功";
+    }
+
+    // 刷新记录列表
+    function refreshRecordUI() {
+        let list = document.getElementById('recordList');
+        list.innerHTML = '';
+        if (history.length === 0) {
+            list.innerHTML = '暂无记录';
+            return;
+        }
+        [...history].reverse().forEach((item, i) => {
+            let div = document.createElement('div');
+            div.className = 'record-item';
+            div.innerHTML = `
+                <div><span class="round">第${item.round}轮</span> 东:${item.e} 南:${item.s} 西:${item.w} 北:${item.n}</div>
+                <button class="edit-btn" onclick="editRound(${history.length-1-i})">修改</button>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    // 撤销上一轮
+    function undoLast() {
+        if (history.length === 0) return;
+        if (!confirm('确定要撤销上一轮分数吗？')) return;
+
+        let last = history.pop();
+        scores.east -= last.e;
+        scores.south -= last.s;
+        scores.west -= last.w;
+        scores.north -= last.n;
+
+        round--;
+        updateTotal();
+        refreshRecordUI();
+        if (history.length === 0) document.getElementById('undoBtn').style.display = 'none';
+    }
+
+    // 清空所有
+    function resetAll() {
+        if (!confirm('确定要清空所有数据吗？')) return;
+        scores = { east: 0, south: 0, west: 0, north: 0 };
+        history = [];
+        round = 1;
+        editingIndex = -1;
+        updateTotal();
+        refreshRecordUI();
+        clearInputs();
+        document.getElementById('undoBtn').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
